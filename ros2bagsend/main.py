@@ -46,12 +46,19 @@ def main():
     node = Node('_bag_publisher_node')
 
     # Get ROS2 parameters
-    # --ros-args
-    #   -p bag_file_path:='test/test.db3'
     node.declare_parameter("bag_file_path", Parameter.Type.STRING)  # bag file path
+    node.declare_parameter("start_frame_no", 1)  # start frame number (default: 1)
+    node.declare_parameter("end_frame_no", 2147483647)  # end frame number (default: 2147483647)
+    node.declare_parameter("statistical_analysis_only", False) # Statistical analysis only
 
     # bag file path
     bag_file_path: str = node.get_parameter("bag_file_path").get_parameter_value().string_value
+    # start frame number
+    start_frame_no: int = node.get_parameter("start_frame_no").get_parameter_value().integer_value
+    # end frame number
+    end_frame_no: int = node.get_parameter("end_frame_no").get_parameter_value().integer_value
+    # Statistical analysis only
+    statistical_analysis_only: bool = node.get_parameter("statistical_analysis_only").get_parameter_value().bool_value
 
     # Open bag file
     reader = rosbag2_py.SequentialReader()
@@ -60,10 +67,6 @@ def main():
     reader.open(storage_options, converter_options)
 
     rosbag_topic_infos: List[rosbag2_py.TopicMetadata] = reader.get_all_topics_and_types()
-    print(f'{Color.GREEN("topic summary ########################################")}')
-    for idx, rosbag_topic_info in enumerate(rosbag_topic_infos):
-        print(f'{Color.GREEN("topic_info.name" + str(idx))}: {rosbag_topic_info.name}')
-    print(f'{Color.GREEN("######################################################")}')
 
     # Create Publisher
     message_types: List[MsgType] = [get_message_type(topic_type=rosbag_topic_info.type) for rosbag_topic_info in rosbag_topic_infos]
@@ -73,6 +76,41 @@ def main():
         message_name: node.create_publisher(message_type, message_name, 10) for message_type, message_name in zip(message_types, message_names)
     }
 
+    # Statistics Calculation
+    if statistical_analysis_only:
+        print(f'{Color.BLUE("Statistical information is being analyzed ...")}')
+        approximate_frame_count: int = 0
+        unused_topic_name: str = None
+        while reader.has_next():
+            approximate_frame_count += 1 # Topic transmission cycle number (not topic transmission count)
+            used_flg: Dict[str, bool] = {message_name: False for message_name in message_names} # Flag initialization
+
+            if approximate_frame_count > end_frame_no:
+                break
+
+            if unused_topic_name is not None:
+                used_flg[unused_topic_name] = True
+                unused_topic_name = None
+            while True:
+                if not reader.has_next():
+                    break
+                if sum(used_flg.values()) >= len(message_names):
+                    break
+                topic_name, data, timestamp = reader.read_next()
+                if used_flg[topic_name] == False:
+                    used_flg[topic_name] = True
+                elif used_flg[topic_name] == True:
+                    unused_topic_name = topic_name
+                    break
+        print(f'{Color.GREEN("topic summary ########################################")}')
+        for idx, rosbag_topic_info in enumerate(rosbag_topic_infos):
+            print(f'{Color.GREEN("topic_info.name" + str(idx))}: {rosbag_topic_info.name}')
+        print(f'{Color.GREEN("======================================================")}')
+        print(f'{Color.GREEN("Approximate total frame count")}: {approximate_frame_count - start_frame_no:,}')
+        print(f'{Color.GREEN("######################################################")}')
+        print(f'{Color.BLUE("Done.")}')
+        exit(0)
+
     unsent_topic_name: str = None
     unsent_data = None
     unsent_timestamp = None
@@ -80,18 +118,24 @@ def main():
 
     # Sequential reading of bag files
     while reader.has_next():
+        period_number += 1 # Topic transmission cycle number (not topic transmission count)
+
         # Wait for key input
-        key = input("Press Enter to publish the next frame... (Interrupted by 'q' key) ")
-        if key == 'q':
-            break
+        if period_number >= start_frame_no:
+            key = input("Press Enter to publish the next frame... (Interrupted by 'q' key) ")
+            if key == 'q':
+                break
 
         published_flg: Dict[str, bool] = {message_name: False for message_name in message_names} # Flag initialization
-        period_number += 1 # Topic transmission cycle number (not topic transmission count)
+
+        if period_number > end_frame_no:
+            break
 
         # Publish if there is data that has not been sent in the previous cycle
         if unsent_topic_name is not None and unsent_data is not None:
-            publishers[unsent_topic_name].publish(unsent_data)
-            print(f'{Color.YELLOW(period_number)}.{Color.GREEN(unsent_topic_name)}: {unsent_topic_name} {Color.GREEN("time_stamp")}: {unsent_timestamp} ')
+            if period_number >= start_frame_no:
+                publishers[unsent_topic_name].publish(unsent_data)
+                print(f'{Color.YELLOW(period_number)}.{Color.GREEN(unsent_topic_name)}: {unsent_topic_name} {Color.GREEN("time_stamp")}: {unsent_timestamp} ')
             published_flg[unsent_topic_name] = True
             unsent_topic_name = None
             unsent_data = None
@@ -116,12 +160,13 @@ def main():
 
             if published_flg[topic_name] == False:
                 # Publish
-                publishers[topic_name].publish(data)
-                print(f'{Color.YELLOW(period_number)}.{Color.GREEN(topic_name)}: {topic_name} {Color.GREEN("time_stamp")}: {timestamp} ')
+                if period_number >= start_frame_no:
+                    publishers[topic_name].publish(data)
+                    print(f'{Color.YELLOW(period_number)}.{Color.GREEN(topic_name)}: {topic_name} {Color.GREEN("time_stamp")}: {timestamp} ')
                 # Update flag to Sent
                 published_flg[topic_name] = True
 
-            elif  published_flg[topic_name] == True:
+            elif published_flg[topic_name] == True:
                 # Stored as untransmitted data, transmitted in the next cycle
                 unsent_topic_name = topic_name
                 unsent_data = copy.deepcopy(data)
