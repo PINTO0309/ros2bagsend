@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools", "setuptools_scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ros2bagsend"
+description = "A tool that uses simple logic to send topics recorded in ros2 bag one cycle at a time (not a strict cycle)."
+authors = [{name="Katsuya Hyodo", email="rmsdh122@yahoo.co.jp"}]
+readme = "README.md"
+license = {file = "LICENSE"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "rosbag2-py>=0.15.8",
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/PINTO0309/ros2bagsend"
+
+[tool.setuptools.packages.find]
+exclude = ["build", "tests"]
+
+[tool.setuptools.dynamic]
+version = {attr = "ros2bagsend.version"}
+
+[tool.setuptools_scm]
+write_to = "ros2bagsend/_version.py"
+
+[project.scripts]
+ros2bagsend = "ros2bagsend.main:main"

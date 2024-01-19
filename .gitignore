@@ -1,0 +1,7 @@
+metadata.yaml
+*.db3
+
+ros2bagsend.egg-info/
+__pycache__/
+*.pyc
+_version.py
