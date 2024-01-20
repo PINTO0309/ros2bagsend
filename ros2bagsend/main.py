@@ -174,6 +174,13 @@ def main():
                 # Go to the next cycle without publish
                 break
 
+    # Send any unsent topics
+    period_number += 1
+    if unsent_topic_name is not None and unsent_data is not None:
+        if period_number >= start_frame_no:
+            publishers[unsent_topic_name].publish(unsent_data)
+            print(f'{Color.YELLOW(period_number)}.{Color.GREEN(unsent_topic_name)}: {unsent_topic_name} {Color.GREEN("time_stamp")}: {unsent_timestamp} ')
+
     rclpy.shutdown()
 
 if __name__ == '__main__':
