@@ -102,6 +102,8 @@ def main():
                 elif used_flg[topic_name] == True:
                     unused_topic_name = topic_name
                     break
+        if unused_topic_name is not None:
+            approximate_frame_count += 1
         print(f'{Color.GREEN("topic summary ########################################")}')
         for idx, rosbag_topic_info in enumerate(rosbag_topic_infos):
             print(f'{Color.GREEN("topic_info.name" + str(idx))}: {rosbag_topic_info.name}')
