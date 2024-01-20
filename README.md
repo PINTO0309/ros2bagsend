@@ -3,6 +3,8 @@ A tool that uses simple logic to send topics recorded in ros2 bag one cycle at a
 
 [![Downloads](https://static.pepy.tech/personalized-badge/ros2bagsend?period=total&units=none&left_color=grey&right_color=brightgreen&left_text=Downloads)](https://pepy.tech/project/ros2bagsend)
 
+https://github.com/PINTO0309/ros2bagsend/assets/33194443/b25069a8-300e-4913-bb59-7477b3927561
+  
 ## 1. Install ROS2
 ```bash
 DISTRO=humble
@@ -67,8 +69,6 @@ pip install ros2bagsend
     :
     :
   ```
-
-  https://github.com/PINTO0309/ros2bagsend/assets/33194443/b25069a8-300e-4913-bb59-7477b3927561
 
 - Specifies frames to start or end transmission
   `frames` refers to the number of times a topic is sent, not the number of topics. In the example below, topics are sent in the range from frame 5 to frame 100, skipping up to frame 4. It is advisable to check in advance which frame range should be sent using `rqt` or similar.
