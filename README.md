@@ -1,5 +1,5 @@
 # ros2bagsend
-A tool that uses simple logic to send topics recorded in ros2 bag one cycle at a time (not a strict cycle). https://github.com/PINTO0309/simple-ros2-processing-tools
+A tool that uses simple logic to send topics recorded in ros2 bag one cycle at a time (not a strict cycle). I use this tool to step-submit and debug rosbag topics synchronously. https://github.com/PINTO0309/simple-ros2-processing-tools
 
 [![Downloads](https://static.pepy.tech/personalized-badge/ros2bagsend?period=total&units=none&left_color=grey&right_color=brightgreen&left_text=Downloads)](https://pepy.tech/project/ros2bagsend)
 
